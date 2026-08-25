@@ -141,10 +141,8 @@ def solve(grid, cap=999):
     def eat(cell):
         remaining.discard(cell)
         eats.append((len(route) - 1, cell))
-        # Longer body: grow 2 per eat (so snake visibly elongates)
-        for _ in range(2):
-            if BASE_LEN + len(growth) < cap:
-                growth.append(len(route) - 1)
+        if BASE_LEN + len(growth) < cap:
+            growth.append(len(route) - 1)
 
     def step_to(cell):
         route.append(cell)
