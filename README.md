@@ -1,128 +1,114 @@
-# snk
+# snake-and-commits
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/platane/platane/main.yml?label=action&style=flat-square)](https://github.com/Platane/Platane/actions/workflows/main.yml)
-[![GitHub release](https://img.shields.io/github/release/platane/snk.svg?style=flat-square)](https://github.com/platane/snk/releases/latest)
-[![GitHub marketplace](https://img.shields.io/badge/marketplace-snake-blue?logo=github&style=flat-square)](https://github.com/marketplace/actions/generate-snake-game-from-github-contribution-grid)
-![type definitions](https://img.shields.io/npm/types/typescript?style=flat-square)
-![code style](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)
+Your GitHub contribution graph, but it's a real game of Snake.
 
-Generates a snake game from a github user contributions graph
+![snake eating a contribution graph](assets/demo.svg)
 
-<picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-dark.svg"
-  />
-  <source
-    media="(prefers-color-scheme: light)"
-    srcset="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg"
-  />
-  <img
-    alt="github contribution grid snake animation"
-    src="https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake.svg"
-  />
-</picture>
+The snake plays an actual, winnable game. It hunts every commit cell with real
+pathfinding, never crosses its own body, grows one segment per cell it eats,
+fades from a bright head to a dim tail, and counts the commits it swallows. Pure
+animated SVG (CSS, no JavaScript), so it renders anywhere GitHub shows an image.
 
-Pull a github user's contribution graph.
-Make it a snake Game, generate a snake path where the cells get eaten in an orderly fashion.
+- 🐍 **Real Snake AI**: BFS pathfinding, self-collision avoidance, tail-chasing when boxed in
+- 🍎 **Eats your commits**: each contribution cell is food, with a live counter
+- 📈 **Grows as it eats**: starts at 3 segments, gains one per cell, head-to-tail gradient
+- 🎨 **Themeable**: `green` (default), `blue`, `amber`, `matrix`
+- 🪶 **Zero dependencies**: one standard-library Python file
+- ♿ **Respects `prefers-reduced-motion`**: falls back to a static graph
 
-Generate a [gif](https://github.com/Platane/snk/raw/output/github-contribution-grid-snake.gif) or [svg](https://github.com/Platane/snk/raw/output/github-contribution-grid-snake.svg) image. Colors can [be](https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-ocean.svg) [customized](https://raw.githubusercontent.com/platane/snk/output/github-contribution-grid-snake-grey.svg).
+## Quickstart
 
-Available as github action. It can automatically generate a new image each day. Which makes for great [github profile readme](https://docs.github.com/en/free-pro-team@latest/github/setting-up-and-managing-your-github-profile/managing-your-profile-readme)
-
-## Usage
-
-### **github action**
+Add one workflow to your profile repo (the repo named after your username).
+Create `.github/workflows/snake.yml`:
 
 ```yaml
-- uses: Platane/snk@v3
-  with:
-    # github user name to read the contribution graph from (**required**)
-    # using action context var `github.repository_owner` or specified user
-    github_user_name: ${{ github.repository_owner }}
-
-    # list of files to generate.
-    # one file per line. Each output can be customized with options as query string.
-    #
-    #  supported options:
-    #  - palette:           A preset of color, one of [github, github-dark, github-light]
-    #  - color_snake:       Color of the snake
-    #  - color_dots:        Coma separated list of dots color.
-    #                       The first one is 0 contribution, then it goes from the low contribution to the highest.
-    #                       Exactly 5 colors are expected.
-    #  - color_background:  Color of the background (for gif only)
-    outputs: |
-      dist/github-snake.svg
-      dist/github-snake-dark.svg?palette=github-dark
-      dist/ocean.gif?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9&color_background=#aaaaaa
+name: snake
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # twice a day
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dahan8473/snake-and-commits@v1
+        with:
+          github_user: ${{ github.repository_owner }}
+          output: dist/snake.svg
+          theme: green
+      - uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 ```
 
-[example with cron job](https://github.com/Platane/Platane/blob/master/.github/workflows/main.yml#L26-L33)
+Run it once from the Actions tab, then add this to your `README.md`:
 
-### **svg**
+```md
+![snake](https://raw.githubusercontent.com/YOUR_NAME/YOUR_NAME/output/snake.svg)
+```
 
-If you are only interested in generating a svg (not a gif), consider using this faster action: `uses: Platane/snk/svg-only@v3`
+It regenerates on schedule from your live contribution data.
 
-### **dark mode**
+### Light and dark
 
-![dark mode](https://github.com/user-attachments/assets/6b900b64-0cdc-43f0-a234-e11dba8e786e)
+Generate two themes and switch with `<picture>`:
 
-For **dark mode** support on github, use this [special syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#specifying-the-theme-an-image-is-shown-to) in your readme.
-
-```html
+```md
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="github-snake-dark.svg" />
-  <source media="(prefers-color-scheme: light)" srcset="github-snake.svg" />
-  <img alt="github-snake" src="github-snake.svg" />
+  <source media="(prefers-color-scheme: dark)"  srcset=".../output/snake-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset=".../output/snake-light.svg">
+  <img src=".../output/snake-dark.svg" alt="contribution snake">
 </picture>
 ```
 
-### **interactive demo**
+## Options
 
-<a href="https://platane.github.io/snk">
-  <img height="300px" src="https://user-images.githubusercontent.com/1659820/121798244-7c86d700-cc25-11eb-8c1c-b8e65556ac0d.gif" ></img>
-</a>
+| input | default | description |
+|---|---|---|
+| `github_user` | required | whose graph to render (usually `${{ github.repository_owner }}`) |
+| `output` | `dist/snake.svg` | output path |
+| `theme` | `green` | `green`, `blue`, `amber`, `matrix` |
+| `frame` | `false` | draw a rounded window frame around the graph |
+| `counter` | `true` | show the `commits eaten: n/total` counter |
 
-[platane.github.io/snk](https://platane.github.io/snk)
+## Themes
 
-### **npm package**
+| theme | look |
+|---|---|
+| 🟩 `green` | native GitHub |
+| 🟦 `blue` | phosphor terminal |
+| 🟧 `amber` | old CRT |
+| ⬛ `matrix` | bright-on-black |
 
-```ts
-import { generateSnakeAnimation } from "generate-snake-animation";
+## Run locally
 
-const outputs = [
-  {
-    format: "svg",
-    drawOptions: {
-      // ..
-    },
-  },
-];
-
-const results = await generateSnakeAnimation(
-  {
-    platform: "github", // supports github, gitlab and forgejo (codeberg)
-    username: "platane",
-    githubToken: process.env.GITHUB_TOKEN,
-  },
-  outputs,
-);
-
-fs.writeFileSync("snake.svg", results[0]);
+```bash
+GH_TOKEN=$(gh auth token) python3 generate.py --user YOUR_NAME --output snake.svg --theme green
 ```
 
-or with npx
+One file, standard library only. Any token that can read public contribution
+data works.
 
-```sh
-npx generate-snake-animation@3 --forgejo_user codeberg.org/JasterV --output snake.svg?palette=codeberg
-```
+## How it works
 
-## Implementation
+1. Pull a year of contribution levels from the GitHub GraphQL API.
+2. Solve the board like a Snake game. From a corner, BFS to the nearest commit
+   cell (sparsest first), always avoiding the body. If the best target is walled
+   off, chase the tail until space opens. The route is collision-free, and the
+   max length is auto-tuned to the largest snake that still clears the board.
+3. Render it as a cell-state animation. Each grid square animates its own fill:
+   bright when the head enters, fading down the body, back to background as the
+   tail passes. Nothing moves, so segments can never overlap.
 
-[solver algorithm](./packages/solver/README.md)
+## Credits
 
-## Contribution Policy
+Built by [David Liu](https://github.com/dahan8473). Inspired by the
+contribution-graph art tradition ([Platane/snk](https://github.com/Platane/snk)
+and friends), rebuilt from scratch as an actual game of Snake. MIT licensed.
 
-This project does not accept pull request.
-
-Reporting or fixing issues is appreciated, but change in the API or implementation should be discussed in issue first and is likely not going be greenlighted.
+pls drop a star!
